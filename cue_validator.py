@@ -470,19 +470,40 @@ class CueValidatorGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Could not read error log file:\n{e}")
             error_window.destroy()
-    
+
     def open_file_externally(self, file_path):
         """Open file with system default application."""
         try:
+            # Temporarily close the file handler to release the file lock
+            if hasattr(self.validator,
+                       'error_logger') and self.validator.error_logger:
+                handlers = self.validator.error_logger.handlers[:]
+                for handler in handlers:
+                    handler.close()
+                    self.validator.error_logger.removeHandler(handler)
+
             import subprocess
             import sys
-            
+
             if sys.platform.startswith('darwin'):  # macOS
                 subprocess.call(['open', str(file_path)])
             elif sys.platform.startswith('win'):  # Windows
                 subprocess.call(['start', str(file_path)], shell=True)
             else:  # Linux and others
                 subprocess.call(['xdg-open', str(file_path)])
+
+            # Recreate the file handler after opening
+            if hasattr(self.validator,
+                       'error_logger') and self.validator.error_logger:
+                file_handler = logging.FileHandler(file_path, encoding='utf-8')
+                file_handler.setLevel(logging.ERROR)
+                formatter = logging.Formatter(
+                    '%(asctime)s - %(levelname)s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S'
+                )
+                file_handler.setFormatter(formatter)
+                self.validator.error_logger.addHandler(file_handler)
+
         except Exception as e:
             messagebox.showerror("Error", f"Could not open file:\n{e}")
     
