@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 from pathlib import Path
 import threading
+import difflib
 from datetime import datetime
 import logging
 
@@ -128,6 +129,30 @@ class CueValidator:
                 f_out.write(line)
         os.remove(path)
         temp_path.rename(path)
+
+    def find_closest_filename(self, filename: str, directory: str) -> str:
+        """
+        Finds the filename in the specified directory that most closely matches the input filename.
+
+        Args:
+            filename (str): The filename to match.
+            directory (str): The directory path to search for files.
+
+        Returns:
+            str: The filename from the directory that most closely matches the input filename.
+                 Returns None if the directory does not exist or is empty.
+        """
+        try:
+            files = [f for f in os.listdir(directory) if
+                     os.path.isfile(os.path.join(directory, f))]
+            if not files:
+                return None
+            closest = difflib.get_close_matches(filename, files, n=1, cutoff=0.4)
+            return closest[0] if closest else None
+        except FileNotFoundError:
+            return None
+
+
     
     def validate_and_correct_cue(self, cue_file_path, dry_run=False):
         """
@@ -191,10 +216,14 @@ class CueValidator:
                 if not audio_file_path.exists():
                     # Try to find a file with the same base name but different extension
                     matching_file = self.find_matching_audio_file(cue_dir, filename)
-                    
+
+                    old_filename = filename
                     if matching_file:
-                        old_filename = filename
                         new_filename = matching_file.name
+                    else:
+                        new_filename = self.find_closest_filename(filename,
+                                                                  cue_dir)
+                    if new_filename:
                         new_line = f'{prefix}"{new_filename}" {suffix}\n'
                         
                         self.log(f"Correcting: {old_filename} -> {new_filename}")
