@@ -8,6 +8,7 @@
 - Recursively scans directories for **.cue** files
 - Validates audio file references in CUE files
 - Automatically corrects mismatched extensions (e.g., .wav → .flac)
+- Uses difflib to find misspelled files 
 - Creates backup files (.cue.bak) before making changes
 - Supports common audio formats: **FLAC, WAV, MP3, APE, WV, OGG, M4A, AAC, OPUS**
 - Advanced Error Logging 
@@ -38,6 +39,7 @@
 - Parses FILE lines using regex
 - Checks if referenced audio files exist
 - Searches for files with matching names but different extensions
+- For no matching files, searches for files with similar names 
 - Updates the CUE file if a match is found
 
 
