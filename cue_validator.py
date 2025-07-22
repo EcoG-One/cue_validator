@@ -120,6 +120,7 @@ class CueValidator:
                 return potential_file
         
         return None
+
     def utf16_to_utf8(self, path):
         # Read UTF-16 file and write it as UTF-8
         temp_path = path.with_suffix('.tmp')
@@ -190,7 +191,8 @@ class CueValidator:
                               encoding='utf-8') as f:
                         lines = f.readlines()
                 else:
-                    with open(cue_file_path, 'r', encoding=guess.encoding) as f:
+                    with open(cue_file_path, 'r',
+                              encoding=guess.encoding) as f:
                         lines = f.readlines()
         except Exception as e:
             error_msg = f"Error reading {cue_file_path}: {e}"
@@ -215,7 +217,8 @@ class CueValidator:
                 # Check if the referenced file exists
                 if not audio_file_path.exists():
                     # Try to find a file with the same base name but different extension
-                    matching_file = self.find_matching_audio_file(cue_dir, filename)
+                    matching_file = self.find_matching_audio_file(cue_dir,
+                                                                  filename)
 
                     old_filename = filename
                     if matching_file:
@@ -225,10 +228,12 @@ class CueValidator:
                                                                   cue_dir)
                     if new_filename:
                         new_line = f'{prefix}"{new_filename}" {suffix}\n'
-                        
-                        self.log(f"Correcting: {old_filename} -> {new_filename}")
-                        result['changes'].append(f"Line {line_num}: {old_filename} -> {new_filename}")
-                        
+
+                        self.log(
+                            f"Correcting: {old_filename} -> {new_filename}")
+                        result['changes'].append(
+                            f"Line {line_num}: {old_filename} -> {new_filename}")
+
                         new_lines.append(new_line)
                         modified = True
                     else:
@@ -348,7 +353,7 @@ class CueValidatorGUI:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(3, weight=1)
+        main_frame.rowconfigure(5, weight=1)
         
         # Directory selection
         ttk.Label(main_frame, text="Directory to scan:").grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
@@ -363,9 +368,14 @@ class CueValidatorGUI:
         self.browse_btn = ttk.Button(dir_frame, text="Browse", command=self.browse_directory)
         self.browse_btn.grid(row=0, column=1)
         
+        # Options and control buttons frame
+        control_frame = ttk.Frame(main_frame)
+        control_frame.grid(row=2, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
+        control_frame.columnconfigure(0, weight=1)
+        
         # Options
-        options_frame = ttk.LabelFrame(main_frame, text="Options", padding="5")
-        options_frame.grid(row=2, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
+        options_frame = ttk.LabelFrame(control_frame, text="Options", padding="5")
+        options_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 10))
         
         self.dry_run_cb = ttk.Checkbutton(
             options_frame, 
@@ -375,8 +385,8 @@ class CueValidatorGUI:
         self.dry_run_cb.grid(row=0, column=0, sticky=tk.W)
         
         # Control buttons
-        btn_frame = ttk.Frame(main_frame)
-        btn_frame.grid(row=2, column=2, sticky=tk.E)
+        btn_frame = ttk.Frame(control_frame)
+        btn_frame.grid(row=0, column=1, sticky=tk.E)
         
         self.scan_btn = ttk.Button(btn_frame, text="Start Scan", command=self.start_scan)
         self.scan_btn.grid(row=0, column=0, padx=(5, 0))
@@ -389,7 +399,7 @@ class CueValidatorGUI:
         
         # Progress bar
         self.progress_var = tk.StringVar(value="Ready to scan")
-        ttk.Label(main_frame, textvariable=self.progress_var).grid(row=3, column=0, sticky=tk.W, pady=(10, 5))
+        ttk.Label(main_frame, textvariable=self.progress_var).grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=(10, 5))
         
         self.progress_bar = ttk.Progressbar(main_frame, mode='determinate')
         self.progress_bar.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
@@ -470,31 +480,29 @@ class CueValidatorGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Could not read error log file:\n{e}")
             error_window.destroy()
-
+    
     def open_file_externally(self, file_path):
         """Open file with system default application."""
         try:
             # Temporarily close the file handler to release the file lock
-            if hasattr(self.validator,
-                       'error_logger') and self.validator.error_logger:
+            if hasattr(self.validator, 'error_logger') and self.validator.error_logger:
                 handlers = self.validator.error_logger.handlers[:]
                 for handler in handlers:
                     handler.close()
                     self.validator.error_logger.removeHandler(handler)
-
+            
             import subprocess
             import sys
-
+            
             if sys.platform.startswith('darwin'):  # macOS
                 subprocess.call(['open', str(file_path)])
             elif sys.platform.startswith('win'):  # Windows
                 subprocess.call(['start', str(file_path)], shell=True)
             else:  # Linux and others
                 subprocess.call(['xdg-open', str(file_path)])
-
+                
             # Recreate the file handler after opening
-            if hasattr(self.validator,
-                       'error_logger') and self.validator.error_logger:
+            if hasattr(self.validator, 'error_logger') and self.validator.error_logger:
                 file_handler = logging.FileHandler(file_path, encoding='utf-8')
                 file_handler.setLevel(logging.ERROR)
                 formatter = logging.Formatter(
@@ -503,7 +511,7 @@ class CueValidatorGUI:
                 )
                 file_handler.setFormatter(formatter)
                 self.validator.error_logger.addHandler(file_handler)
-
+                
         except Exception as e:
             messagebox.showerror("Error", f"Could not open file:\n{e}")
     
